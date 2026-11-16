@@ -706,3 +706,37 @@ Validação executada:
 - [ ] Conferir a tela renderizada no Chrome e ajustar divergências visuais apontadas.
 - [ ] Depois da residência, reconstruir configurações, soneca e prévia da notificação antes da integração da API.
 - [ ] Fazer validação visual final de onboarding, lista e residência em Android físico ou emulador.
+
+### Tela concluída — configurações Stitch
+
+- [x] Auditar `configura_es/code.html` e `configura_es/screen.png`.
+- [x] Inventariar cabeçalho, switches, residência/raio, permissões, ações, modal e rodapé.
+- [x] Reconstruir a composição da tela e interações locais no React Native.
+- [x] Implementar switches, seletor de raio com confirmação e feedback toast.
+- [x] Validar lint e TypeScript.
+- [x] Conferir a tela renderizada no Chrome; usuário aprovou.
+
+### Tela em reconstrução — modal de soneca Stitch
+
+- [x] Auditar `modal_de_soneca/code.html` e identificar opções, textos e ações.
+- [x] Implementar bottom sheet com quatro durações, seleção por rádio, confirmar e cancelar.
+- [x] Abrir o modal pela ação "Pausar lembretes temporariamente" em Configurações.
+- [x] Validar lint e TypeScript.
+- [x] Conferir o modal renderizado no Chrome; usuário aprovou.
+
+### Próxima tela — prévia da notificação Android Stitch
+
+- [x] Auditar `notifica_o_android/code.html` e `notifica_o_android/screen.png`.
+- [x] Reconstruir a prévia da notificação em React Native, mantendo os elementos do protótipo.
+- [x] Disponibilizar acesso à prévia pela tela de Configurações.
+- [x] Validar lint e TypeScript.
+- [x] Conferir no Chrome lado a lado com o protótipo; usuário aprovou.
+
+## Próximo bloco — integração da lista com a API
+
+- [ ] Conferir o contrato atual dos endpoints de itens no backend.
+- [ ] Criar tipos TypeScript para os DTOs da lista e itens.
+- [ ] Integrar leitura e estados de carregamento, vazio e erro na tela da lista.
+- [ ] Integrar criação de item pelo formulário reconstruído.
+- [ ] Integrar conclusão, reabertura, edição, exclusão e limpeza de itens concluídos.
+- [ ] Validar os fluxos no Chrome e em Android após a integração.
