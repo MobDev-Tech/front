@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 const DEVICE_ID_KEY = 'smart-list.device-id';
 
@@ -8,12 +9,18 @@ function createDeviceId(): string {
 }
 
 export async function getDeviceId(): Promise<string> {
-  const existingId = await SecureStore.getItemAsync(DEVICE_ID_KEY);
+  const existingId = Platform.OS === 'web'
+    ? globalThis.localStorage?.getItem(DEVICE_ID_KEY)
+    : await SecureStore.getItemAsync(DEVICE_ID_KEY);
   if (existingId) {
     return existingId;
   }
 
   const newId = createDeviceId();
-  await SecureStore.setItemAsync(DEVICE_ID_KEY, newId);
+  if (Platform.OS === 'web') {
+    globalThis.localStorage?.setItem(DEVICE_ID_KEY, newId);
+  } else {
+    await SecureStore.setItemAsync(DEVICE_ID_KEY, newId);
+  }
   return newId;
 }

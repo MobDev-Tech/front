@@ -685,9 +685,24 @@ Validação executada:
 - [ ] Capturar e comparar a tela renderizada em Android Emulator ou dispositivo físico.
 - [ ] Conectar a lista aos endpoints reais da API.
 
+### Tela concluída — adicionar/editar item Stitch
+
+- [x] Comparar o HTML e o `screen.png` de `adicionar_ou_editar_item`.
+- [x] Inventariar cabeçalho, contexto da lista, banner de modo de compra, formulário, unidades, categorias, ações e feedback.
+- [x] Reconstruir a tela em React Native, preservando a hierarquia e os elementos do protótipo.
+- [x] Implementar seleção de unidade e categoria, preenchimento rápido e validação visual do nome.
+- [x] Ajustar o ícone de usuário do cabeçalho e os ícones vetoriais das categorias após comparação no Chrome.
+- [x] Validar lint, TypeScript e exportação web.
+- [x] Conferir a tela renderizada no Chrome lado a lado com o protótipo; usuário confirmou que está adequada.
+- [ ] Criar rota e fluxo de edição por ID (`/item/[id]`).
+- [ ] Conectar a criação e edição aos endpoints reais da API.
+
 ## 16. Próxima tarefa
 
-- [ ] Capturar a tela de onboarding em Android e comparar com o `screen.png`.
-- [ ] Capturar a lista de compras em Android e comparar com o `screen.png`.
-- [ ] Auditar o HTML e o `screen.png` de `adicionar_ou_editar_item`.
-- [ ] Reconstruir adicionar/editar item antes de iniciar a integração da API.
+- [x] Auditar o HTML e o `screen.png` de `configurar_resid_ncia`.
+- [x] Reconstruir a tela de residência em React Native, mantendo os elementos do protótipo.
+- [x] Preservar navegação e interações visuais locais, sem iniciar ainda a integração com a API.
+- [x] Validar lint, TypeScript e Expo Doctor.
+- [ ] Conferir a tela renderizada no Chrome e ajustar divergências visuais apontadas.
+- [ ] Depois da residência, reconstruir configurações, soneca e prévia da notificação antes da integração da API.
+- [ ] Fazer validação visual final de onboarding, lista e residência em Android físico ou emulador.
