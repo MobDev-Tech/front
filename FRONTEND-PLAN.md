@@ -734,9 +734,12 @@ Validação executada:
 
 ## Próximo bloco — integração da lista com a API
 
-- [ ] Conferir o contrato atual dos endpoints de itens no backend.
-- [ ] Criar tipos TypeScript para os DTOs da lista e itens.
-- [ ] Integrar leitura e estados de carregamento, vazio e erro na tela da lista.
-- [ ] Integrar criação de item pelo formulário reconstruído.
-- [ ] Integrar conclusão, reabertura, edição, exclusão e limpeza de itens concluídos.
-- [ ] Validar os fluxos no Chrome e em Android após a integração.
+- [x] Conferir o contrato atual dos endpoints de itens no backend.
+- [x] Criar tipos TypeScript para os DTOs da lista e itens.
+- [x] Integrar leitura e estados de carregamento, vazio e erro na tela da lista.
+- [x] Integrar criação de item pelo formulário reconstruído e pelo atalho da lista.
+- [x] Integrar conclusão, reabertura e limpeza de itens concluídos.
+- [x] Integrar edição e exclusão individual de itens pelo menu da lista.
+- [x] Configurar CORS no backend para permitir chamadas do Expo Web durante o desenvolvimento no Chrome.
+- [x] Validar leitura, criação, conclusão e persistência após recarregar no Chrome; usuário confirmou.
+- [ ] Validar edição e exclusão no Chrome e fluxos da lista em Android.

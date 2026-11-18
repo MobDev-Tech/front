@@ -1,6 +1,9 @@
+import { Platform } from 'react-native';
+
 import { getDeviceId } from './device-id';
 
-const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:8080').replace(/\/$/, '');
+const defaultApiUrl = Platform.OS === 'web' ? 'http://localhost:8080' : 'http://10.0.2.2:8080';
+const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? defaultApiUrl).replace(/\/$/, '');
 
 export type ApiErrorPayload = {
   status?: number;

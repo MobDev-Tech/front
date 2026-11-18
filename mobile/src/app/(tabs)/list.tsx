@@ -1,6 +1,6 @@
 import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold, useFonts } from '@expo-google-fonts/inter';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -15,48 +15,107 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { colors, radii, spacing } from '../../constants/design-tokens';
+import { ApiError } from '../../lib/api';
+import {
+  clearCompletedShoppingItems,
+  createShoppingItem,
+  deleteShoppingItem,
+  getShoppingItems,
+  toggleShoppingItemCompletion,
+  type ShoppingItemCategory,
+  type ShoppingItemResponse,
+} from '../../lib/shopping-items';
 
-type Category = 'Mercearia' | 'Hortifrúti' | 'Laticínios' | 'Padaria' | 'Limpeza' | 'Higiene Pessoal';
+const categories = ['Mercearia', 'Hortifrúti', 'Laticínios', 'Padaria', 'Limpeza', 'Higiene Pessoal'] as const;
+type Category = (typeof categories)[number];
 
 type GroceryItem = {
-  id: string;
+  id: number;
   title: string;
   meta: string;
-  category: Category;
+  category: string;
+  apiCategory: ShoppingItemCategory;
 };
 
-const categories: Category[] = [
-  'Mercearia',
-  'Hortifrúti',
-  'Laticínios',
-  'Padaria',
-  'Limpeza',
-  'Higiene Pessoal',
-];
+const categoryLabels: Record<ShoppingItemCategory, string> = {
+  MERCEARIA: 'Mercearia',
+  LATICINIOS: 'Laticínios',
+  OLEOS_CONDIMENTOS: 'Óleos e condimentos',
+  PADARIA: 'Padaria',
+  HORTIFRUTI: 'Hortifrúti',
+  LIMPEZA: 'Limpeza',
+  HIGIENE_PESSOAL: 'Higiene Pessoal',
+  FARMACIA: 'Farmácia',
+  MERCADO: 'Mercado',
+  PAPELARIA: 'Papelaria',
+  OUTROS: 'Outros',
+};
 
-const initialPending: GroceryItem[] = [
-  { id: 'coffee', title: 'Café moído tradicional', meta: '2 pacotes (500g)', category: 'Mercearia' },
-  { id: 'milk', title: 'Leite desnatado', meta: '4 caixas (1L)', category: 'Laticínios' },
-  { id: 'oil', title: 'Azeite de oliva extra virgem', meta: '1 garrafa (500ml)', category: 'Mercearia' },
-  { id: 'bread', title: 'Pão de forma integral', meta: '1 pct (450g)', category: 'Padaria' },
-];
+const categoryApiValues: Record<Category, ShoppingItemCategory> = {
+  Mercearia: 'MERCEARIA',
+  'Hortifrúti': 'HORTIFRUTI',
+  Laticínios: 'LATICINIOS',
+  Padaria: 'PADARIA',
+  Limpeza: 'LIMPEZA',
+  'Higiene Pessoal': 'HIGIENE_PESSOAL',
+};
 
-const initialCompleted: GroceryItem[] = [
-  { id: 'detergent', title: 'Detergente neutro', meta: '', category: 'Limpeza' },
-  { id: 'apple', title: 'Maçã Fuji', meta: '1 kg', category: 'Hortifrúti' },
-  { id: 'soap', title: 'Sabonete líquido', meta: '', category: 'Higiene Pessoal' },
-];
+function mapShoppingItem(item: ShoppingItemResponse): GroceryItem {
+  return {
+    id: item.id,
+    title: item.name,
+    meta: item.quantity ?? '',
+    category: categoryLabels[item.category],
+    apiCategory: item.category,
+  };
+}
+
+function getShoppingListErrorMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    return error.message;
+  }
+
+  return 'Não foi possível acessar a API. Confira se ela está ativa, o endereço configurado e o acesso CORS.';
+}
 
 export default function ShoppingListScreen() {
   const [fontsLoaded] = useFonts({ Inter_400Regular, Inter_600SemiBold, Inter_700Bold });
-  const [pending, setPending] = useState<GroceryItem[]>(initialPending);
-  const [completed, setCompleted] = useState<GroceryItem[]>(initialCompleted);
+  const [pending, setPending] = useState<GroceryItem[]>([]);
+  const [completed, setCompleted] = useState<GroceryItem[]>([]);
+  const [itemsLoading, setItemsLoading] = useState(true);
+  const [itemsError, setItemsError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [completedExpanded, setCompletedExpanded] = useState(true);
   const [paused, setPaused] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [optionsItem, setOptionsItem] = useState<GroceryItem | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isWriting, setIsWriting] = useState(false);
+  const [quickAddError, setQuickAddError] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [category, setCategory] = useState<Category>('Mercearia');
+
+  const loadItems = useCallback(async (silent = false) => {
+    if (!silent) setItemsLoading(true);
+    setItemsError(null);
+
+    try {
+      const response = await getShoppingItems();
+      setPending(response.pendingItems.map(mapShoppingItem));
+      setCompleted(response.completedItems.map(mapShoppingItem));
+    } catch (error) {
+      setItemsError(getShoppingListErrorMessage(error));
+    } finally {
+      if (!silent) setItemsLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadItems();
+    }, [loadItems]),
+  );
 
   if (!fontsLoaded) {
     return (
@@ -66,33 +125,76 @@ export default function ShoppingListScreen() {
     );
   }
 
-  function togglePending(item: GroceryItem) {
-    setPending((current) => current.filter((entry) => entry.id !== item.id));
-    setCompleted((current) => [...current, item]);
+  async function toggleItem(item: GroceryItem) {
+    if (isWriting) return;
+    setIsWriting(true);
+    setActionError(null);
+
+    try {
+      await toggleShoppingItemCompletion(item.id);
+      await loadItems(true);
+    } catch (error) {
+      setActionError(getShoppingListErrorMessage(error));
+    } finally {
+      setIsWriting(false);
+    }
   }
 
-  function toggleCompleted(item: GroceryItem) {
-    setCompleted((current) => current.filter((entry) => entry.id !== item.id));
-    setPending((current) => [...current, item]);
+  async function clearCompletedItems() {
+    if (isWriting || completed.length === 0) return;
+    setIsWriting(true);
+    setActionError(null);
+
+    try {
+      await clearCompletedShoppingItems();
+      await loadItems(true);
+    } catch (error) {
+      setActionError(getShoppingListErrorMessage(error));
+    } finally {
+      setIsWriting(false);
+    }
   }
 
-  function saveQuickItem() {
+  async function deleteSelectedItem() {
+    if (!optionsItem || isWriting) return;
+    setIsWriting(true);
+    setActionError(null);
+
+    try {
+      await deleteShoppingItem(optionsItem.id);
+      setOptionsItem(null);
+      setConfirmDelete(false);
+      await loadItems(true);
+    } catch (error) {
+      setActionError(getShoppingListErrorMessage(error));
+    } finally {
+      setIsWriting(false);
+    }
+  }
+
+  async function saveQuickItem() {
     const trimmedName = name.trim();
     if (!trimmedName) return;
 
-    setPending((current) => [
-      {
-        id: `quick-${Date.now()}`,
-        title: trimmedName,
-        meta: quantity.trim(),
-        category,
-      },
-      ...current,
-    ]);
-    setName('');
-    setQuantity('');
-    setCategory('Mercearia');
-    setSheetOpen(false);
+    setIsWriting(true);
+    setQuickAddError(null);
+
+    try {
+      await createShoppingItem({
+        name: trimmedName,
+        quantity: quantity.trim() || null,
+        category: categoryApiValues[category],
+      });
+      setName('');
+      setQuantity('');
+      setCategory('Mercearia');
+      setSheetOpen(false);
+      await loadItems(true);
+    } catch (error) {
+      setQuickAddError(getShoppingListErrorMessage(error));
+    } finally {
+      setIsWriting(false);
+    }
   }
 
   return (
@@ -101,7 +203,9 @@ export default function ShoppingListScreen() {
         <ListHeader onSettings={() => router.push('/(tabs)/settings')} />
 
         <View style={styles.summaryRow}>
-          <Text style={styles.pendingCount}>{pending.length} itens pendentes</Text>
+          <Text style={styles.pendingCount}>
+            {itemsLoading ? 'Carregando lista…' : itemsError ? 'Lista indisponível' : pending.length + ' itens pendentes'}
+          </Text>
           <Pressable
             accessibilityLabel={paused ? 'Reativar lembretes' : 'Pausar lembretes'}
             accessibilityRole="button"
@@ -115,40 +219,89 @@ export default function ShoppingListScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.pendingList}>
-          {pending.map((item) => (
-            <GroceryCard key={item.id} item={item} onToggle={() => togglePending(item)} />
-          ))}
-          {pending.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Tudo comprado</Text>
-              <Text style={styles.emptyText}>Adicione um produto quando sua próxima lista começar.</Text>
-            </View>
-          ) : null}
-        </View>
-
-        <View style={styles.completedHeader}>
-          <Pressable
-            accessibilityLabel={completedExpanded ? 'Recolher comprados recentemente' : 'Expandir comprados recentemente'}
-            accessibilityRole="button"
-            onPress={() => setCompletedExpanded((current) => !current)}
-            style={styles.completedTitleButton}
-          >
-            <ChevronIcon expanded={completedExpanded} />
-            <Text style={styles.completedTitle}>Comprados recentemente ({completed.length})</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => setCompleted([])} style={styles.clearButton}>
-            <Text style={styles.clearText}>Limpar</Text>
-          </Pressable>
-        </View>
-
-        {completedExpanded ? (
-          <View style={styles.completedList}>
-            {completed.map((item) => (
-              <GroceryCard key={item.id} completed item={item} onToggle={() => toggleCompleted(item)} />
-            ))}
-            {completed.length === 0 ? <Text style={styles.noCompleted}>Nenhum item comprado recentemente.</Text> : null}
+        {actionError ? (
+          <View accessibilityRole="alert" style={styles.actionErrorCard}>
+            <Text style={styles.actionErrorText}>{actionError}</Text>
           </View>
+        ) : null}
+
+        <View style={styles.pendingList}>
+          {itemsLoading ? (
+            <View accessibilityRole="progressbar" style={styles.feedbackCard}>
+              <ActivityIndicator color={colors.primary} />
+              <Text style={styles.feedbackText}>Carregando seus itens…</Text>
+            </View>
+          ) : itemsError ? (
+            <View accessibilityRole="alert" style={styles.feedbackCard}>
+              <Text style={styles.feedbackTitle}>Não foi possível carregar a lista</Text>
+              <Text style={styles.feedbackText}>{itemsError}</Text>
+              <Pressable accessibilityRole="button" onPress={() => void loadItems()} style={styles.retryButton}>
+                <Text style={styles.retryText}>Tentar novamente</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              {pending.map((item) => (
+                <GroceryCard
+                  disabled={isWriting}
+                  key={item.id}
+                  item={item}
+                  onMore={() => setOptionsItem(item)}
+                  onToggle={() => { void toggleItem(item); }}
+                />
+              ))}
+              {pending.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyTitle}>{completed.length === 0 ? 'Sua lista está vazia' : 'Tudo comprado'}</Text>
+                  <Text style={styles.emptyText}>
+                    {completed.length === 0
+                      ? 'Adicione o primeiro produto para começar sua lista.'
+                      : 'Adicione um produto quando sua próxima lista começar.'}
+                  </Text>
+                </View>
+              ) : null}
+            </>
+          )}
+        </View>
+
+        {!itemsLoading && !itemsError ? (
+          <>
+            <View style={styles.completedHeader}>
+              <Pressable
+                accessibilityLabel={completedExpanded ? 'Recolher comprados recentemente' : 'Expandir comprados recentemente'}
+                accessibilityRole="button"
+                onPress={() => setCompletedExpanded((current) => !current)}
+                style={styles.completedTitleButton}
+              >
+                <ChevronIcon expanded={completedExpanded} />
+                <Text style={styles.completedTitle}>Comprados recentemente ({completed.length})</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                disabled={isWriting || completed.length === 0}
+                onPress={() => { void clearCompletedItems(); }}
+                style={[styles.clearButton, (isWriting || completed.length === 0) && styles.clearButtonDisabled]}
+              >
+                <Text style={styles.clearText}>Limpar</Text>
+              </Pressable>
+            </View>
+
+            {completedExpanded ? (
+              <View style={styles.completedList}>
+                {completed.map((item) => (
+                  <GroceryCard
+                    completed
+                    disabled={isWriting}
+                    key={item.id}
+                    item={item}
+                    onMore={() => setOptionsItem(item)}
+                    onToggle={() => { void toggleItem(item); }}
+                  />
+                ))}
+                {completed.length === 0 ? <Text style={styles.noCompleted}>Nenhum item comprado recentemente.</Text> : null}
+              </View>
+            ) : null}
+          </>
         ) : null}
       </ScrollView>
 
@@ -163,15 +316,94 @@ export default function ShoppingListScreen() {
 
       <QuickAddSheet
         category={category}
+        error={quickAddError}
         name={name}
         onCategoryChange={setCategory}
         onClose={() => setSheetOpen(false)}
+        onOpenFullForm={() => { setSheetOpen(false); router.push('/item/new'); }}
         onNameChange={setName}
         onQuantityChange={setQuantity}
-        onSave={saveQuickItem}
+        onSave={() => { void saveQuickItem(); }}
         quantity={quantity}
+        saving={isWriting}
         visible={sheetOpen}
       />
+
+      <Modal
+        animationType="slide"
+        onRequestClose={() => { setOptionsItem(null); setConfirmDelete(false); }}
+        transparent
+        visible={optionsItem !== null}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable
+            accessibilityLabel="Fechar opções do item"
+            onPress={() => { setOptionsItem(null); setConfirmDelete(false); }}
+            style={styles.modalBackdrop}
+          />
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            {confirmDelete && optionsItem ? (
+              <>
+                <Text style={styles.sheetTitle}>Excluir item?</Text>
+                <Text style={styles.deleteDescription}>
+                  {optionsItem.title} será removido da lista. Essa ação não pode ser desfeita.
+                </Text>
+                {actionError ? <Text accessibilityRole="alert" style={styles.modalActionError}>{actionError}</Text> : null}
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={isWriting}
+                  onPress={() => { void deleteSelectedItem(); }}
+                  style={[styles.deleteConfirmButton, isWriting && styles.saveButtonDisabled]}
+                >
+                  <Text style={styles.deleteConfirmText}>{isWriting ? 'Excluindo…' : 'Excluir item'}</Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" onPress={() => setConfirmDelete(false)} style={styles.cancelButton}>
+                  <Text style={styles.cancelText}>Cancelar</Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <Text style={styles.sheetTitle}>{optionsItem?.title ?? 'Opções do item'}</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    if (!optionsItem) return;
+                    const itemToEdit = optionsItem;
+                    setOptionsItem(null);
+                    router.push({
+                      pathname: '/item/new',
+                      params: {
+                        itemId: String(itemToEdit.id),
+                        name: itemToEdit.title,
+                        quantity: itemToEdit.meta,
+                        category: itemToEdit.apiCategory,
+                      },
+                    });
+                  }}
+                  style={styles.optionAction}
+                >
+                  <Text style={styles.optionActionText}>Editar item</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => { setActionError(null); setConfirmDelete(true); }}
+                  style={styles.deleteAction}
+                >
+                  <Text style={styles.deleteActionText}>Excluir item</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setOptionsItem(null)}
+                  style={styles.cancelButton}
+                >
+                  <Text style={styles.cancelText}>Cancelar</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -199,13 +431,26 @@ function ListHeader({ onSettings }: { onSettings: () => void }) {
   );
 }
 
-function GroceryCard({ completed = false, item, onToggle }: { completed?: boolean; item: GroceryItem; onToggle: () => void }) {
+function GroceryCard({
+  completed = false,
+  disabled = false,
+  item,
+  onMore,
+  onToggle,
+}: {
+  completed?: boolean;
+  disabled?: boolean;
+  item: GroceryItem;
+  onMore: () => void;
+  onToggle: () => void;
+}) {
   return (
     <View style={[styles.groceryCard, completed && styles.completedCard]}>
       <Pressable
         accessibilityLabel={completed ? `Marcar ${item.title} como pendente` : `Marcar ${item.title} como comprado`}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: completed }}
+        disabled={disabled}
         onPress={onToggle}
         style={[styles.checkbox, completed && styles.checkboxChecked]}
       >
@@ -219,34 +464,44 @@ function GroceryCard({ completed = false, item, onToggle }: { completed?: boolea
           <Text style={[styles.categoryChip, completed && styles.completedChip]}>{item.category}</Text>
         </View>
       </View>
-      {!completed ? (
-        <Pressable accessibilityLabel={`Mais opções para ${item.title}`} accessibilityRole="button" style={styles.moreButton}>
+      <Pressable
+        accessibilityLabel={`Mais opções para ${item.title}`}
+        accessibilityRole="button"
+        disabled={disabled}
+        onPress={onMore}
+        style={styles.moreButton}
+      >
           <MoreIcon />
-        </Pressable>
-      ) : null}
+      </Pressable>
     </View>
   );
 }
 
 function QuickAddSheet({
   category,
+  error,
   name,
   onCategoryChange,
   onClose,
+  onOpenFullForm,
   onNameChange,
   onQuantityChange,
   onSave,
   quantity,
+  saving,
   visible,
 }: {
   category: Category;
+  error: string | null;
   name: string;
   onCategoryChange: (value: Category) => void;
   onClose: () => void;
+  onOpenFullForm: () => void;
   onNameChange: (value: string) => void;
   onQuantityChange: (value: string) => void;
   onSave: () => void;
   quantity: string;
+  saving: boolean;
   visible: boolean;
 }) {
   return (
@@ -292,8 +547,17 @@ function QuickAddSheet({
               </Pressable>
             ))}
           </View>
-          <Pressable accessibilityRole="button" disabled={!name.trim()} onPress={onSave} style={[styles.saveButton, !name.trim() && styles.saveButtonDisabled]}>
-            <Text style={styles.saveButtonText}>Salvar na Lista</Text>
+          <Pressable accessibilityRole="button" onPress={onOpenFullForm} style={styles.fullFormButton}>
+            <Text style={styles.fullFormText}>Abrir formulário completo</Text>
+          </Pressable>
+          {error ? <Text accessibilityRole="alert" style={styles.formError}>{error}</Text> : null}
+          <Pressable
+            accessibilityRole="button"
+            disabled={!name.trim() || saving}
+            onPress={onSave}
+            style={[styles.saveButton, (!name.trim() || saving) && styles.saveButtonDisabled]}
+          >
+            <Text style={styles.saveButtonText}>{saving ? 'Salvando…' : 'Salvar na Lista'}</Text>
           </Pressable>
         </View>
       </View>
@@ -401,12 +665,20 @@ const styles = StyleSheet.create({
   completedTitleButton: { alignItems: 'center', flexDirection: 'row', gap: 6 },
   completedTitle: { color: colors.onSurfaceVariant, fontFamily: 'Inter_600SemiBold', fontSize: 14 },
   clearButton: { minHeight: 40, justifyContent: 'center', paddingHorizontal: 4 },
+  clearButtonDisabled: { opacity: 0.45 },
   clearText: { color: colors.onSurfaceVariant, fontFamily: 'Inter_600SemiBold', fontSize: 12 },
   completedList: { gap: spacing.sm, marginTop: spacing.sm },
   noCompleted: { color: colors.onSurfaceVariant, fontFamily: 'Inter_400Regular', fontSize: 13, paddingVertical: spacing.md },
   emptyState: { alignItems: 'center', backgroundColor: colors.surfaceContainerLow, borderRadius: radii.md, marginTop: spacing.sm, padding: spacing.lg },
   emptyTitle: { color: colors.onSurface, fontFamily: 'Inter_700Bold', fontSize: 18 },
   emptyText: { color: colors.onSurfaceVariant, fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 20, marginTop: spacing.xs, textAlign: 'center' },
+  feedbackCard: { alignItems: 'center', backgroundColor: colors.surfaceContainerLow, borderRadius: radii.md, gap: spacing.sm, marginTop: spacing.sm, padding: spacing.lg },
+  feedbackTitle: { color: colors.onSurface, fontFamily: 'Inter_700Bold', fontSize: 16, textAlign: 'center' },
+  feedbackText: { color: colors.onSurfaceVariant, fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19, textAlign: 'center' },
+  retryButton: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: radii.full, marginTop: spacing.xs, minHeight: 40, justifyContent: 'center', paddingHorizontal: spacing.md },
+  retryText: { color: colors.onPrimary, fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  actionErrorCard: { backgroundColor: colors.error, borderRadius: radii.md, marginBottom: spacing.sm, padding: spacing.sm },
+  actionErrorText: { color: colors.white, fontFamily: 'Inter_600SemiBold', fontSize: 12, lineHeight: 18 },
   fab: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: 28, bottom: 24, elevation: 5, height: 56, justifyContent: 'center', position: 'absolute', right: 16, shadowColor: colors.primary, shadowOffset: { height: 6, width: 0 }, shadowOpacity: 0.3, shadowRadius: 8, width: 56 },
   fabPressed: { transform: [{ scale: 0.96 }] },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
@@ -415,6 +687,16 @@ const styles = StyleSheet.create({
   sheetHandle: { alignSelf: 'center', backgroundColor: colors.outlineVariant, borderRadius: 3, height: 4, marginBottom: spacing.lg, width: 36 },
   sheetHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md },
   sheetTitle: { color: colors.onSurface, fontFamily: 'Inter_700Bold', fontSize: 22 },
+  deleteDescription: { color: colors.onSurfaceVariant, fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 21, marginTop: spacing.sm },
+  modalActionError: { color: colors.error, fontFamily: 'Inter_400Regular', fontSize: 12, lineHeight: 17, marginTop: spacing.sm },
+  optionAction: { alignItems: 'center', backgroundColor: colors.surfaceContainerLow, borderRadius: radii.md, justifyContent: 'center', marginTop: spacing.md, minHeight: 48 },
+  optionActionText: { color: colors.onSurface, fontFamily: 'Inter_600SemiBold', fontSize: 14 },
+  deleteAction: { alignItems: 'center', borderColor: colors.error, borderRadius: radii.md, borderWidth: 1, justifyContent: 'center', marginTop: spacing.sm, minHeight: 48 },
+  deleteActionText: { color: colors.error, fontFamily: 'Inter_600SemiBold', fontSize: 14 },
+  deleteConfirmButton: { alignItems: 'center', backgroundColor: colors.error, borderRadius: radii.md, justifyContent: 'center', marginTop: spacing.lg, minHeight: 48 },
+  deleteConfirmText: { color: colors.white, fontFamily: 'Inter_600SemiBold', fontSize: 14 },
+  cancelButton: { alignItems: 'center', justifyContent: 'center', marginTop: spacing.sm, minHeight: 44 },
+  cancelText: { color: colors.onSurfaceVariant, fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   closeButton: { alignItems: 'center', height: 40, justifyContent: 'center', width: 40 },
   closeText: { color: colors.onSurfaceVariant, fontFamily: 'Inter_400Regular', fontSize: 28, lineHeight: 30 },
   fieldLabel: { color: colors.onSurface, fontFamily: 'Inter_600SemiBold', fontSize: 13, marginBottom: 6, marginTop: spacing.sm },
@@ -424,6 +706,9 @@ const styles = StyleSheet.create({
   categoryOptionSelected: { backgroundColor: colors.primary },
   categoryOptionText: { color: colors.onSurfaceVariant, fontFamily: 'Inter_600SemiBold', fontSize: 12 },
   categoryOptionTextSelected: { color: colors.onPrimary },
+  fullFormButton: { alignItems: 'center', justifyContent: 'center', marginTop: spacing.md, minHeight: 36 },
+  fullFormText: { color: colors.primary, fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  formError: { color: colors.error, fontFamily: 'Inter_400Regular', fontSize: 12, lineHeight: 17, marginTop: spacing.sm },
   saveButton: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: radii.md, height: 50, justifyContent: 'center', marginTop: spacing.lg },
   saveButtonDisabled: { opacity: 0.45 },
   saveButtonText: { color: colors.onPrimary, fontFamily: 'Inter_600SemiBold', fontSize: 14 },

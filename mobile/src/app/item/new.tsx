@@ -1,24 +1,63 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { colors, radii } from '../../constants/design-tokens';
+import { ApiError } from '../../lib/api';
+import { createShoppingItem, updateShoppingItem, type ShoppingItemCategory } from '../../lib/shopping-items';
 
 const units = ['un', 'kg', 'g', 'pct', 'L', 'cx'];
-const categories = ['Padaria', 'Farmácia', 'Mercado', 'Limpeza', 'Papelaria', 'Hortifruti'];
+const categories = [
+  { label: 'Padaria', value: 'PADARIA' },
+  { label: 'Farmácia', value: 'FARMACIA' },
+  { label: 'Mercado', value: 'MERCADO' },
+  { label: 'Limpeza', value: 'LIMPEZA' },
+  { label: 'Papelaria', value: 'PAPELARIA' },
+  { label: 'Hortifruti', value: 'HORTIFRUTI' },
+] as const satisfies readonly { label: string; value: ShoppingItemCategory }[];
+
+const categoryLabels: Record<ShoppingItemCategory, string> = {
+  MERCEARIA: 'Mercearia',
+  LATICINIOS: 'Laticínios',
+  OLEOS_CONDIMENTOS: 'Óleos e condimentos',
+  PADARIA: 'Padaria',
+  HORTIFRUTI: 'Hortifruti',
+  LIMPEZA: 'Limpeza',
+  HIGIENE_PESSOAL: 'Higiene Pessoal',
+  FARMACIA: 'Farmácia',
+  MERCADO: 'Mercado',
+  PAPELARIA: 'Papelaria',
+  OUTROS: 'Outros',
+};
 
 export default function NewItemScreen() {
-  const [name, setName] = useState('');
-  const [quantity, setQuantity] = useState('');
+  const params = useLocalSearchParams<{
+    itemId?: string;
+    name?: string;
+    quantity?: string;
+    category?: ShoppingItemCategory;
+  }>();
+  const isEditing = typeof params.itemId === 'string';
+  const [name, setName] = useState(params.name ?? '');
+  const [quantity, setQuantity] = useState(params.quantity ?? '');
   const [selectedUnit, setSelectedUnit] = useState('un');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<ShoppingItemCategory | ''>(params.category ?? '');
   const [nameError, setNameError] = useState(false);
+  const [categoryError, setCategoryError] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  function chooseCategory(value: string) {
+  const categoryOptions: readonly { label: string; value: ShoppingItemCategory }[] =
+    selectedCategory && !categories.some((option) => option.value === selectedCategory)
+    ? [{ label: categoryLabels[selectedCategory], value: selectedCategory }, ...categories]
+    : categories;
+
+  function chooseCategory(value: ShoppingItemCategory) {
     setSelectedCategory(value);
-    if (!name.trim()) setName(value);
+    setCategoryError(false);
+    if (!name.trim()) setName(categoryLabels[value]);
     if (!quantity.trim()) setQuantity(`1 ${selectedUnit}`);
   }
 
@@ -27,12 +66,42 @@ export default function NewItemScreen() {
     setQuantity((current) => current ? `${current.trim().split(/\s+/)[0]} ${unit}` : `1 ${unit}`);
   }
 
-  function saveItem() {
+  async function saveItem() {
     if (!name.trim()) {
       setNameError(true);
       return;
     }
-    router.back();
+    if (!selectedCategory) {
+      setCategoryError(true);
+      return;
+    }
+
+    setSaving(true);
+    setSaveError(null);
+
+    try {
+      const item = {
+        name: name.trim(),
+        quantity: quantity.trim() || null,
+        category: selectedCategory,
+      };
+
+      if (isEditing) {
+        await updateShoppingItem(Number(params.itemId), item);
+      } else {
+        await createShoppingItem(item);
+      }
+
+      router.back();
+    } catch (error) {
+      setSaveError(
+        error instanceof ApiError
+          ? error.message
+          : 'Não foi possível acessar a API. Confira se ela está ativa, o endereço configurado e o acesso CORS.',
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -42,7 +111,7 @@ export default function NewItemScreen() {
           <Pressable accessibilityLabel="Voltar" accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}>
             <BackIcon />
           </Pressable>
-          <Text style={styles.headerTitle}>Detalhes Do Item</Text>
+          <Text style={styles.headerTitle}>{isEditing ? 'Editar Item' : 'Detalhes Do Item'}</Text>
           <View style={styles.avatar}><UserIcon /></View>
         </View>
 
@@ -75,7 +144,7 @@ export default function NewItemScreen() {
           <View style={styles.sheetHeading}>
             <View style={styles.headingIcon}><Text style={styles.headingIconText}>☷</Text></View>
             <View style={styles.headingCopy}>
-              <Text style={styles.sheetTitle}>Adicionar Item à Lista</Text>
+              <Text style={styles.sheetTitle}>{isEditing ? 'Editar Item da Lista' : 'Adicionar Item à Lista'}</Text>
               <Text style={styles.sheetSubtitle}>Lembrete inteligente com geolocalização</Text>
             </View>
             <Pressable accessibilityLabel="Fechar formulário" accessibilityRole="button" onPress={() => router.back()} style={styles.closeButton}>
@@ -107,15 +176,22 @@ export default function NewItemScreen() {
           </View>
 
           <View style={styles.categoriesSection}>
-            <View style={styles.categoryHeading}><Text style={styles.bolt}>ϟ</Text><Text style={styles.label}>Adicionar tag ao item</Text></View>
+            <View style={styles.categoryHeading}>
+              <Text style={styles.bolt}>ϟ</Text>
+              <Text style={styles.label}>Adicionar tag ao item</Text>
+              {categoryError ? <Text style={styles.error}>Obrigatória</Text> : null}
+            </View>
             <View style={styles.categoryGrid}>
-              {categories.map((label) => <Pressable accessibilityRole="button" accessibilityState={{ selected: selectedCategory === label }} key={label} onPress={() => chooseCategory(label)} style={[styles.categoryChip, selectedCategory === label && styles.categoryChipSelected]}><CategoryIcon category={label} /><Text style={styles.categoryText}>{label}</Text></Pressable>)}
+              {categoryOptions.map(({ label, value }) => <Pressable accessibilityRole="button" accessibilityState={{ selected: selectedCategory === value }} key={value} onPress={() => chooseCategory(value)} style={[styles.categoryChip, selectedCategory === value && styles.categoryChipSelected]}><CategoryIcon category={label} /><Text style={styles.categoryText}>{label}</Text></Pressable>)}
             </View>
           </View>
 
-          <Pressable accessibilityRole="button" onPress={saveItem} style={({ pressed }) => [styles.saveButton, pressed && styles.pressed]}>
+          {saveError ? <Text accessibilityRole="alert" style={styles.saveError}>{saveError}</Text> : null}
+          <Pressable accessibilityRole="button" disabled={saving} onPress={() => { void saveItem(); }} style={({ pressed }) => [styles.saveButton, pressed && styles.pressed, saving && styles.savingButton]}>
             <SaveIcon />
-            <Text style={styles.saveText}>Salvar Item</Text>
+            <Text style={styles.saveText}>
+              {saving ? 'Salvando…' : isEditing ? 'Salvar Alterações' : 'Salvar Item'}
+            </Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.cancelButton}><Text style={styles.cancelText}>Cancelar</Text></Pressable>
         </View>
@@ -193,6 +269,7 @@ const styles = StyleSheet.create({
   labelIcon: { color: colors.primary, fontSize: 13, fontWeight: '700' },
   label: { color: colors.onSurface, fontFamily: 'Inter_600SemiBold', fontSize: 11 },
   error: { color: colors.error, fontFamily: 'Inter_600SemiBold', fontSize: 9 },
+  saveError: { color: colors.error, fontFamily: 'Inter_400Regular', fontSize: 11, lineHeight: 16 },
   optional: { color: colors.outline, fontFamily: 'Inter_400Regular', fontSize: 9 },
   inputWrap: { alignItems: 'center', backgroundColor: colors.surfaceContainerLow, borderRadius: 10, flexDirection: 'row', minHeight: 41, paddingHorizontal: 10 },
   input: { color: colors.onSurface, flex: 1, fontFamily: 'Inter_400Regular', fontSize: 12, minHeight: 41, paddingVertical: 0 },
@@ -214,6 +291,7 @@ const styles = StyleSheet.create({
   categoryText: { color: colors.onSurface, fontFamily: 'Inter_600SemiBold', fontSize: 9 },
   saveButton: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: 9, elevation: 2, flexDirection: 'row', gap: 7, height: 42, justifyContent: 'center', shadowColor: colors.onSurface, shadowOffset: { height: 1, width: 0 }, shadowOpacity: 0.18, shadowRadius: 3 },
   saveText: { color: colors.onPrimary, fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+  savingButton: { opacity: 0.65 },
   pressed: { opacity: 0.88, transform: [{ scale: 0.99 }] },
   cancelButton: { alignItems: 'center', justifyContent: 'center', minHeight: 34, marginTop: 2 },
   cancelText: { color: colors.onSurfaceVariant, fontFamily: 'Inter_400Regular', fontSize: 10 },
