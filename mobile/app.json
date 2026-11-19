@@ -27,7 +27,17 @@
       "expo-router",
       "expo-secure-store",
       "expo-font",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "A Smart List usa sua localização para registrar sua residência e conferir o perímetro.",
+          "locationAlwaysAndWhenInUsePermission": "A Smart List usa sua localização em segundo plano para lembrar compras ao sair de casa.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isIosBackgroundLocationEnabled": true
+        }
+      ],
+      "expo-notifications"
     ]
   }
 }

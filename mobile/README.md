@@ -4,9 +4,11 @@ Aplicativo mobile da Smart List, construído com Expo, React Native, TypeScript 
 
 ## Executar
 
+Consulte o [guia do repositório](../README.md) para iniciar a API e o aplicativo juntos.
+
 ```powershell
-npm install
-npm start
+npm ci
+npx expo start
 ```
 
 Comandos úteis:
@@ -21,7 +23,7 @@ npx expo-doctor
 
 ## URL da API
 
-Copie `.env.example` para `.env.local` e ajuste a URL conforme o ambiente:
+Copie `.env.example` para `.env.local`. Deixe a variável comentada no Chrome e no Android Emulator; só defina a URL para um aparelho físico:
 
 ```powershell
 Copy-Item .env.example .env.local
@@ -42,4 +44,4 @@ O cliente HTTP gera e persiste um `X-Device-ID` no dispositivo usando `expo-secu
 - `src/constants/` — tokens de design.
 - `src/lib/` — cliente HTTP e persistência local.
 
-As telas ainda estão na etapa inicial de fundação. A próxima integração é conectar a tela da lista aos endpoints reais do backend.
+A lista, as configurações, a residência e a pausa de lembretes usam a API. A geocerca e as notificações locais exigem permissões e uma build de desenvolvimento para validação em segundo plano no Android. O perfil `eas.json` produz um APK de desenvolvimento.

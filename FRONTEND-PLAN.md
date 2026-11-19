@@ -1,7 +1,7 @@
 # Smart List — Plano de construção do front
 
-Status: fundação técnica criada; estratégia de fidelidade Stitch definida; implementação em andamento
-Atualizado em: 2026-11-12
+Status: telas e integrações do MVP implementadas; validação nativa Android pendente
+Atualizado em: 2026-11-18
 Backend: `smart-list-api`  
 Referência visual: `stitch_lista_inteligente_android_ui/`
 
@@ -20,7 +20,7 @@ O fluxo principal será:
 
 ## 2. Direção de design — primeiro bloco concluído
 
-Esta seção formaliza a direção visual e a estratégia de reprodução antes da próxima rodada de implementação. A pasta Stitch passa a ser a fonte visual primária: o objetivo é reconstruir as telas no React Native com máxima fidelidade, preservando todos os elementos, estados e relações de layout dos HTMLs. Adaptações serão feitas somente quando forem necessárias para navegação, acessibilidade ou funcionamento nativo.
+Esta seção registra a direção visual usada na reconstrução. A pasta Stitch é a fonte visual primária: o objetivo é preservar os elementos, estados e relações de layout dos HTMLs no React Native. Adaptações são feitas quando necessárias para navegação, acessibilidade ou funcionamento nativo.
 
 ### Estratégia visual ajustada: fidelidade Stitch
 
@@ -32,7 +32,7 @@ Contrato de fidelidade:
 - textos, labels, ícones, cards, banners, seletores, modais e estados devem ser inventariados e reproduzidos;
 - cores, tipografia, pesos, espaçamentos, raios, bordas e hierarquia devem começar pelos valores do HTML;
 - o `screen.png` será usado para comparação visual após cada tela reconstruída;
-- a API será conectada depois que a estrutura visual e os estados estáticos estiverem equivalentes;
+- a API é conectada após a reconstrução visual de cada fluxo;
 - o React Native poderá substituir a implementação técnica, mas não deve alterar a intenção visual.
 
 O que pode ser adaptado sem quebrar a fidelidade: `View` no lugar de `div`, `Pressable` no lugar de `button`, `TextInput` no lugar de `input`, Expo Router no lugar de `href`, permissões nativas no lugar de JavaScript de demonstração e componentes SVG/nativos no lugar de ilustrações impossíveis de executar diretamente.
@@ -111,7 +111,7 @@ Escala estrutural:
 - Corpo auxiliar: 14px / 20px;
 - Label e metadados: 12px / 16px.
 
-As fontes serão carregadas como assets do aplicativo na próxima etapa visual, com fallback controlado apenas para evitar texto invisível durante o carregamento.
+As fontes Inter são carregadas pelo aplicativo com `useFonts`, mantendo o texto oculto até o carregamento terminar.
 
 ### História de cor
 
@@ -405,50 +405,50 @@ O `X-Device-ID` precisa ser criado uma única vez e persistido no dispositivo. N
 
 ### Raio do geofence
 
-Os protótipos oferecem 100m, 150m, 200m e 300m, mas o backend atual sempre força 150m.
+Os protótipos oferecem 100m, 150m, 200m e 300m. A API agora recebe e persiste `radiusMeters` e usa o valor salvo no cálculo do perímetro.
 
 Opções:
 
-- [ ] Ajustar o backend para aceitar e persistir `radiusMeters`.
-- [ ] Manter 150m e remover as outras opções do front.
+- [x] Ajustar o backend para aceitar e persistir `radiusMeters`.
 
-Decisão recomendada: permitir o raio configurável no backend, porque o design já prevê essa experiência.
+Decisão aplicada: raio configurável entre 100m e 300m, com 150m como padrão para clientes antigos.
 
 ### Privacidade da localização
 
-O onboarding afirma que a localização nunca é enviada para servidores, mas a API recebe coordenadas da residência e localização atual.
+O onboarding e as configurações explicam que o endereço e as coordenadas da residência são armazenados pela API; a posição atual é enviada para avaliar o perímetro.
 
 Opções:
 
-- [ ] Corrigir o texto do front para explicar o envio ao backend.
-- [ ] Redesenhar a arquitetura para manter o cálculo local.
+- [x] Corrigir o texto do front para explicar o envio ao backend.
 
-Decisão recomendada para o MVP: corrigir o texto e informar claramente o que é enviado e armazenado.
+Decisão aplicada para o MVP: informar o envio e o armazenamento pela API.
 
 ### Monitoramento em segundo plano
 
-O backend atual apenas avalia o trigger quando recebe uma requisição. Ele não possui push notification nem serviço de localização.
+O backend avalia o trigger quando recebe uma requisição. O aplicativo registra uma geocerca nativa para chamar a API na saída do perímetro. A execução em segundo plano precisa de build de desenvolvimento e validação no Android.
 
 Para o MVP:
 
-- [ ] Implementar localização em segundo plano no aplicativo.
-- [ ] Chamar `POST /api/v1/notifications/trigger-check` quando houver uma mudança relevante.
-- [ ] Exibir notificação local quando `shouldNotify` for `true`.
-- [ ] Evitar chamadas repetidas usando cooldown local.
+- [x] Implementar geocerca em segundo plano no aplicativo.
+- [x] Chamar `POST /api/v1/notifications/trigger-check` no evento de saída.
+- [x] Programar notificação local quando `shouldNotify` for `true`.
+- [x] Evitar avisos repetidos com cooldown persistido de 30 minutos.
+- [ ] Validar a geocerca, o trigger e a notificação real em uma build de desenvolvimento no Android.
 
 Depois do MVP:
 
 - [ ] Avaliar push notification.
 - [ ] Avaliar serviço nativo Android dedicado.
-- [ ] Implementar ações reais da notificação.
+- [x] Implementar ações de abrir lista, adiar 30 minutos e dispensar este aviso.
+- [ ] Validar essas ações em uma notificação real no Android.
 
 ### Permissões e regras de negócio
 
-O backend salva `remindOnLeave`, `notificationPermission`, `locationPermission` e `geofenceActive`, mas a decisão de notificação ainda não usa todos esses valores.
+O backend usa `remindOnLeave`, permissões e `geofenceActive` na decisão. Permissões novas começam negadas até o aplicativo sincronizar o estado do aparelho.
 
-- [ ] Confirmar regra definitiva com o backend.
-- [ ] Fazer o front refletir o estado real retornado pela API.
-- [ ] Não exibir “Monitoramento Ativo” quando o diagnóstico indicar que o sistema não está pronto.
+- [x] Aplicar a regra de permissões, preferência e geofence no backend.
+- [x] Fazer o front refletir o estado real retornado pela API.
+- [x] Exibir “Monitoramento Ativo” somente quando a geocerca está registrada e o diagnóstico está pronto.
 
 ## 9. Design system a implementar
 
@@ -489,90 +489,107 @@ Componentes reutilizáveis prioritários:
 
 ### Fase 0 — Preparação
 
-- [ ] Criar projeto Expo com TypeScript.
-- [ ] Definir se o app ficará em `mobile/` ou em um repositório separado.
-- [ ] Configurar Expo Router.
-- [ ] Configurar lint, formatter e TypeScript strict.
-- [ ] Criar arquivo `.env.example` do mobile.
-- [ ] Documentar como executar o app e o backend juntos.
+- [x] Criar projeto Expo com TypeScript.
+- [x] Manter o app em `mobile/` dentro do repositório separado `MobDev-Tech/front`.
+- [x] Configurar Expo Router.
+- [x] Configurar ESLint e TypeScript strict.
+- [x] Configurar Prettier.
+- [x] Criar arquivo `.env.example` do mobile.
+- [x] Documentar em um README como executar o app e o backend juntos.
+- [x] Preparar `expo-dev-client` e o perfil EAS para gerar APK de desenvolvimento.
 
 ### Fase 1 — Fundação visual
 
-- [ ] Criar tokens de cores, tipografia, espaçamento e raios a partir dos HTMLs Stitch.
-- [ ] Criar componentes base sem perder a estrutura visual dos protótipos.
-- [ ] Configurar safe area e tema claro.
-- [ ] Implementar tabs inferiores conforme a referência visual.
-- [ ] Reproduzir header, FAB, cards, banners, chips e modais.
-- [ ] Comparar cada tela com o `screen.png` correspondente.
-- [ ] Corrigir divergências visuais antes de iniciar a integração da API.
+- [x] Criar tokens de cores, tipografia, espaçamento e raios a partir dos HTMLs Stitch.
+- [x] Criar componentes base sem perder a estrutura visual dos protótipos.
+- [x] Configurar safe area e tema claro.
+- [x] Implementar tabs inferiores conforme a referência visual.
+- [x] Reproduzir headers, FABs, cards, banners, chips e modais.
+- [x] Comparar as telas reconstruídas com os `screen.png` correspondentes no Chrome; usuário aprovou.
+- [x] Corrigir divergências visuais apontadas durante a comparação no Chrome.
+- [ ] Fazer a validação visual final em Android Emulator ou aparelho físico.
 
 ### Fase 2 — Lista de compras
 
-- [ ] Criar tipos TypeScript dos DTOs.
-- [ ] Implementar cliente HTTP.
-- [ ] Persistir `X-Device-ID`.
-- [ ] Buscar lista real.
-- [ ] Criar item.
-- [ ] Editar item.
-- [ ] Alternar conclusão.
-- [ ] Excluir item.
-- [ ] Limpar concluídos.
-- [ ] Implementar estados de carregamento, vazio e erro.
+- [x] Criar tipos TypeScript dos DTOs.
+- [x] Implementar cliente HTTP.
+- [x] Persistir e enviar `X-Device-ID`.
+- [x] Buscar a lista real.
+- [x] Criar item pelo atalho e pelo formulário completo.
+- [x] Editar item pelo menu da lista.
+- [x] Alternar conclusão e reabrir item.
+- [x] Excluir item individual com confirmação.
+- [x] Limpar itens concluídos.
+- [x] Implementar estados de carregamento, vazio e erro.
+- [x] Validar carregamento, criação, conclusão e persistência após recarregar no Chrome; usuário confirmou.
+- [x] Validar edição, conclusão, limpeza e exclusão no Chrome com a API.
+- [ ] Validar o fluxo completo da lista no Android.
 
 ### Fase 3 — Configurações e soneca
 
-- [ ] Buscar configurações.
-- [ ] Atualizar configurações.
-- [ ] Implementar diagnóstico.
-- [ ] Implementar modal de soneca.
-- [ ] Integrar pausa temporária.
-- [ ] Integrar reativação.
+- [x] Construir as telas de configurações e soneca e validar a apresentação no Chrome.
+- [x] Buscar configurações.
+- [x] Atualizar configurações.
+- [x] Ligar o diagnóstico às permissões e ao estado real da residência.
+- [x] Implementar modal de soneca e seleção visual de duração.
+- [x] Integrar pausa temporária.
+- [x] Integrar reativação.
+- [x] Validar switches, raio e soneca no Chrome com a API.
 
 ### Fase 4 — Residência e localização
 
-- [ ] Solicitar permissão de localização.
-- [ ] Obter localização atual.
-- [ ] Salvar residência.
-- [ ] Consultar residência salva.
-- [ ] Implementar raio compatível com o backend.
-- [ ] Consultar geofence.
-- [ ] Exibir estado dentro/fora do perímetro.
+- [x] Construir a tela de configuração da residência conforme o Stitch.
+- [x] Solicitar permissão de localização ao configurar a residência.
+- [x] Obter localização atual.
+- [x] Salvar residência.
+- [x] Consultar residência salva.
+- [x] Implementar raio configurável na API e no front.
+- [x] Consultar geofence.
+- [x] Exibir estado dentro/fora do perímetro após consulta.
+- [x] Validar salvamento e raio de 200m no Chrome com a API.
+- [ ] Validar permissões e posição real no Android.
 
 ### Fase 5 — Notificação local
 
-- [ ] Configurar `expo-notifications`.
-- [ ] Criar canal de notificação Android.
-- [ ] Criar conteúdo da notificação.
-- [ ] Integrar `trigger-check`.
-- [ ] Implementar cooldown para não notificar repetidamente.
-- [ ] Implementar ação “Abrir lista”.
-- [ ] Implementar ação “Adiar”.
-- [ ] Definir comportamento de “Dispensar”.
+- [x] Construir e validar no Chrome a prévia visual da notificação Android.
+- [x] Configurar `expo-notifications`.
+- [x] Criar canais de notificação Android com e sem vibração.
+- [x] Criar conteúdo da notificação com contagem e nome de item.
+- [x] Integrar `trigger-check` ao evento de saída da geocerca.
+- [x] Implementar cooldown persistido de 30 minutos.
+- [x] Implementar ação “Abrir lista”.
+- [x] Implementar ação “Adiar” por 30 minutos.
+- [x] Definir “Dispensar” como fechamento deste aviso, mantendo o cooldown.
+- [ ] Validar entrega e ações no Android com uma build de desenvolvimento.
 
 ### Fase 6 — Onboarding e acabamento
 
 - [x] Implementar onboarding real.
 - [x] Persistir conclusão do onboarding.
-- [ ] Criar fluxo de permissões negadas.
-- [ ] Criar estados sem residência.
-- [ ] Criar estados sem itens.
-- [ ] Revisar acessibilidade.
-- [ ] Testar diferentes tamanhos de tela.
-- [ ] Validar Android físico.
+- [x] Manter a lista utilizável e indicar permissões negadas ou pendentes.
+- [x] Exibir estado sem residência e acesso à configuração.
+- [x] Criar e ligar o estado de lista vazia à resposta real da API.
+- [x] Revisar rótulos e estados de permissão nas telas alteradas.
+- [ ] Validar com leitor de tela Android.
+- [x] Verificar ausência de rolagem horizontal no Chrome em 320px e 430px.
+- [ ] Validar em Android Emulator ou aparelho físico.
 
 ## 11. Critérios de aceite do MVP
 
-- [ ] O app inicia sem erro em Android.
-- [ ] O usuário consegue criar um item e vê-lo após recarregar a tela.
-- [ ] O usuário consegue concluir, editar e excluir um item.
-- [ ] O estado da lista vem da API, não de dados fixos.
-- [ ] O `X-Device-ID` é persistido e enviado em todas as chamadas necessárias.
-- [ ] O usuário consegue configurar a residência.
-- [ ] O diagnóstico exibe corretamente as permissões e a residência.
-- [ ] O usuário consegue pausar e reativar lembretes.
-- [ ] O aplicativo consegue obter a localização com permissão explícita.
+- [ ] O app inicia sem erro em Android; ainda falta validar em emulador ou aparelho.
+- [x] O usuário consegue criar um item e vê-lo após recarregar a tela no Chrome.
+- [x] Validar no Chrome que o usuário consegue concluir, editar e excluir um item.
+- [ ] Validar as mesmas operações no Android.
+- [x] O estado da lista vem da API, não de dados fixos.
+- [x] O `X-Device-ID` é persistido e enviado nas chamadas da lista.
+- [x] O usuário consegue configurar a residência no Chrome com localização autorizada.
+- [x] O diagnóstico exibe permissões e residência da API no Chrome.
+- [x] O usuário consegue pausar e reativar lembretes no Chrome.
+- [x] O aplicativo obtém a localização com permissão explícita no Chrome.
+- [ ] Validar as permissões, residência e geocerca no Android.
 - [ ] Uma notificação local pode ser exibida quando o backend retornar `shouldNotify: true`.
 - [ ] Erros de rede e validação possuem feedback compreensível.
+- [x] O layout não apresenta rolagem horizontal nas larguras verificadas no Chrome.
 - [ ] O layout permanece utilizável em telas Android comuns.
 
 ## 12. Testes necessários
@@ -671,9 +688,10 @@ Validação executada:
 - `npm run typecheck` — aprovado.
 - `npx expo-doctor` — 20/20 verificações aprovadas.
 - `npx expo start --no-dev --offline` — Metro iniciou usando `src/app` como raiz do Expo Router.
-- `npx expo start --web --no-dev` — bundle web concluído; captura visual automática bloqueada porque não há navegador disponível no ambiente.
+- `npx expo export --platform web` — bundle web concluído.
+- Chrome automatizado — CRUD, residência, raio, configurações e soneca verificados com a API; sem rolagem horizontal em 320px e 430px.
 
-### Tela em reconstrução — lista de compras Stitch
+### Tela concluída — lista de compras Stitch
 
 - [x] Comparar o HTML e o `screen.png` de `lista_de_compras`.
 - [x] Inventariar header, monitoramento, pausa, itens pendentes, comprados recentes, FAB, bottom sheet e tabs.
@@ -683,7 +701,10 @@ Validação executada:
 - [x] Adicionar ícones SVG e navegação inferior com ícones.
 - [x] Validar lint, TypeScript e Expo Doctor.
 - [ ] Capturar e comparar a tela renderizada em Android Emulator ou dispositivo físico.
-- [ ] Conectar a lista aos endpoints reais da API.
+- [x] Conectar leitura, criação, edição, conclusão, reabertura e exclusão aos endpoints reais da API.
+- [x] Exibir carregamento, lista vazia e erro da API.
+- [x] Validar edição e exclusão no Chrome com a API.
+- [ ] Validar o fluxo completo no Android.
 
 ### Tela concluída — adicionar/editar item Stitch
 
@@ -694,18 +715,18 @@ Validação executada:
 - [x] Ajustar o ícone de usuário do cabeçalho e os ícones vetoriais das categorias após comparação no Chrome.
 - [x] Validar lint, TypeScript e exportação web.
 - [x] Conferir a tela renderizada no Chrome lado a lado com o protótipo; usuário confirmou que está adequada.
-- [ ] Criar rota e fluxo de edição por ID (`/item/[id]`).
-- [ ] Conectar a criação e edição aos endpoints reais da API.
+- [x] Criar fluxo de edição de item conectado à API.
 
 ## 16. Próxima tarefa
 
-- [x] Auditar o HTML e o `screen.png` de `configurar_resid_ncia`.
-- [x] Reconstruir a tela de residência em React Native, mantendo os elementos do protótipo.
-- [x] Preservar navegação e interações visuais locais, sem iniciar ainda a integração com a API.
-- [x] Validar lint, TypeScript e Expo Doctor.
-- [ ] Conferir a tela renderizada no Chrome e ajustar divergências visuais apontadas.
-- [ ] Depois da residência, reconstruir configurações, soneca e prévia da notificação antes da integração da API.
-- [ ] Fazer validação visual final de onboarding, lista e residência em Android físico ou emulador.
+1. Instalar/configurar Android SDK ou gerar o APK pelo perfil `mobile/eas.json` em uma conta Expo para usar um aparelho.
+2. Validar CRUD da lista, residência, permissões e soneca no Android conectado à API.
+3. Simular a saída do perímetro e confirmar notificação real, cooldown e as ações “Abrir lista”, “Adiar” e “Dispensar”.
+4. Conferir fidelidade visual com os `screen.png`, acessibilidade com TalkBack e tamanhos Android comuns.
+
+O código e as integrações do MVP foram implementados. O perfil de desenvolvimento EAS e `expo-dev-client` estão preparados; a build/validação nativa depende de um ambiente Android ou de uma conta Expo vinculada. O Chrome não executa geocerca em segundo plano.
+
+Ambiente conferido em 2026-11-18: `adb`/Android SDK não estão instalados e `npx eas-cli@latest whoami` retornou `Not logged in`. O bundle Android foi gerado, mas nenhum APK foi executado em aparelho ou emulador.
 
 ### Tela concluída — configurações Stitch
 
@@ -716,7 +737,7 @@ Validação executada:
 - [x] Validar lint e TypeScript.
 - [x] Conferir a tela renderizada no Chrome; usuário aprovou.
 
-### Tela em reconstrução — modal de soneca Stitch
+### Tela concluída — modal de soneca Stitch
 
 - [x] Auditar `modal_de_soneca/code.html` e identificar opções, textos e ações.
 - [x] Implementar bottom sheet com quatro durações, seleção por rádio, confirmar e cancelar.
@@ -724,7 +745,7 @@ Validação executada:
 - [x] Validar lint e TypeScript.
 - [x] Conferir o modal renderizado no Chrome; usuário aprovou.
 
-### Próxima tela — prévia da notificação Android Stitch
+### Tela concluída — prévia da notificação Android Stitch
 
 - [x] Auditar `notifica_o_android/code.html` e `notifica_o_android/screen.png`.
 - [x] Reconstruir a prévia da notificação em React Native, mantendo os elementos do protótipo.
@@ -732,7 +753,7 @@ Validação executada:
 - [x] Validar lint e TypeScript.
 - [x] Conferir no Chrome lado a lado com o protótipo; usuário aprovou.
 
-## Próximo bloco — integração da lista com a API
+## Integração da lista com a API
 
 - [x] Conferir o contrato atual dos endpoints de itens no backend.
 - [x] Criar tipos TypeScript para os DTOs da lista e itens.
@@ -742,4 +763,14 @@ Validação executada:
 - [x] Integrar edição e exclusão individual de itens pelo menu da lista.
 - [x] Configurar CORS no backend para permitir chamadas do Expo Web durante o desenvolvimento no Chrome.
 - [x] Validar leitura, criação, conclusão e persistência após recarregar no Chrome; usuário confirmou.
-- [ ] Validar edição e exclusão no Chrome e fluxos da lista em Android.
+- [x] Validar edição, exclusão e limpeza de concluídos no Chrome com a API.
+- [ ] Validar fluxos da lista em Android.
+
+## Bloco implementado — configurações, residência e notificações
+
+- [x] Validar edição, exclusão individual e limpeza de concluídos no Chrome.
+- [x] Integrar leitura e atualização das configurações e pausa/reativação dos lembretes.
+- [x] Integrar residência, raio e diagnóstico à API e validar no Chrome.
+- [x] Registrar geocerca e preparar notificação local com ações no Android.
+- [ ] Validar lista e operações CRUD no Android, conectado à API.
+- [ ] Validar geocerca e notificação real em build de desenvolvimento Android.
