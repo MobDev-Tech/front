@@ -9,6 +9,7 @@ import { getSettings, type UserSettings } from './settings';
 
 export const GEOFENCE_TASK = 'smart-list-home-geofence';
 
+/** Ativa ou desativa o monitoramento conforme residência, preferências e permissões. */
 export async function configureGeofence(
   residence: Residence | null,
   settings: UserSettings,
@@ -42,12 +43,14 @@ export async function configureGeofence(
   return true;
 }
 
+/** Restaura o monitoramento usando a residência e as preferências salvas. */
 export async function restoreGeofence() {
   if (Platform.OS === 'web') return false;
   const [residence, settings] = await Promise.all([getResidence(), getSettings()]);
   return configureGeofence(residence, settings);
 }
 
+/** Consulta a localização e verifica se uma saída deve gerar um lembrete. */
 export async function processGeofenceExit() {
   const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
   const settings = await getSettings();
