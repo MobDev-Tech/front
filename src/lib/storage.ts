@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 const ONBOARDING_COMPLETED_KEY = 'smart-list.onboarding-completed';
 
+/** Informa se o usuário já concluiu a apresentação inicial do aplicativo. */
 export async function hasCompletedOnboarding(): Promise<boolean> {
   const value =
     Platform.OS === 'web'
@@ -12,6 +13,7 @@ export async function hasCompletedOnboarding(): Promise<boolean> {
   return value === 'true';
 }
 
+/** Registra localmente a conclusão da apresentação inicial. */
 export async function completeOnboarding(): Promise<void> {
   if (Platform.OS === 'web') {
     globalThis.localStorage?.setItem(ONBOARDING_COMPLETED_KEY, 'true');
