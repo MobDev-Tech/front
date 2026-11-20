@@ -25,18 +25,22 @@ export type SystemDiagnostic = {
   residenceStatusMessage: string;
 };
 
+/** Busca as preferências atuais do usuário. */
 export function getSettings() {
   return api.get<UserSettings>('/api/v1/settings');
 }
 
+/** Salva as preferências atualizadas do usuário. */
 export function updateSettings(settings: SettingsUpdate) {
   return api.put<UserSettings>('/api/v1/settings', settings);
 }
 
+/** Busca o diagnóstico de configuração e permissões informado pela API. */
 export function getDiagnostic() {
   return api.get<SystemDiagnostic>('/api/v1/settings/diagnostic');
 }
 
+/** Lê do sistema as permissões atuais de localização e notificações. */
 export async function readDevicePermissions(): Promise<
   Pick<SettingsUpdate, 'notificationPermission' | 'locationPermission'>
 > {
@@ -56,6 +60,7 @@ export async function readDevicePermissions(): Promise<
   };
 }
 
+/** Sincroniza com a API as permissões do aparelho quando houver divergência. */
 export async function syncDevicePermissions(settings: UserSettings): Promise<UserSettings> {
   const permissions = await readDevicePermissions();
   if (
@@ -66,6 +71,7 @@ export async function syncDevicePermissions(settings: UserSettings): Promise<Use
   return updateSettings({ ...settings, ...permissions });
 }
 
+/** Solicita as permissões necessárias e retorna o estado atualizado do aparelho. */
 export async function requestDevicePermissions() {
   const foreground = await Location.requestForegroundPermissionsAsync();
   if (foreground.granted && Platform.OS !== 'web') {
