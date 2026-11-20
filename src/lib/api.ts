@@ -11,7 +11,9 @@ export type ApiErrorPayload = {
   errors?: Record<string, string>;
 };
 
+/** Representa um erro da API com o status HTTP e os detalhes recebidos. */
 export class ApiError extends Error {
+  /** Cria o erro com a mensagem e os dados disponíveis da resposta. */
   constructor(
     message: string,
     public readonly status?: number,
@@ -26,6 +28,7 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
 };
 
+/** Envia uma solicitação à API e transforma respostas HTTP inválidas em ApiError. */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const deviceId = await getDeviceId();
   const headers = new Headers(options.headers);
@@ -73,11 +76,17 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   return payload as T;
 }
 
+/** Reúne métodos HTTP tipados para os serviços do aplicativo. */
 export const api = {
+  /** Busca dados na API. */
   get: <T>(path: string) => apiRequest<T>(path),
+  /** Cria um recurso na API. */
   post: <T>(path: string, body: unknown) => apiRequest<T>(path, { method: 'POST', body }),
+  /** Substitui um recurso na API. */
   put: <T>(path: string, body: unknown) => apiRequest<T>(path, { method: 'PUT', body }),
+  /** Atualiza parcialmente um recurso na API. */
   patch: <T>(path: string, body?: unknown) => apiRequest<T>(path, { method: 'PATCH', body }),
+  /** Exclui um recurso na API. */
   delete: <T>(path: string) => apiRequest<T>(path, { method: 'DELETE' }),
 };
 
