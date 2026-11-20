@@ -1,43 +1,83 @@
-# Smart List — front-end
+# 🛒 Smart List
 
-Aplicativo React Native com Expo Router. Este é o repositório `MobDev-Tech/front`. A API Spring Boot fica no repositório separado `MobDev-Tech/smart-list-api`.
+Aplicativo mobile para organizar compras e lembrar dos itens pendentes. Com a localização
+autorizada, o app também pode enviar um lembrete ao sair da residência configurada.
 
-## Iniciar API e app
+## ✨ Funcionalidades
 
-Em um terminal, entre na pasta do repositório da API:
+- 📝 Adicionar e editar produtos, quantidades e categorias.
+- ✅ Marcar itens como comprados e organizar a lista por status.
+- 🏠 Configurar a residência usando a localização do aparelho.
+- 📍 Usar geofence para detectar a saída do perímetro residencial.
+- 🔔 Receber e pausar lembretes de compras.
+- ⚙️ Consultar preferências e permissões do aplicativo.
+
+## 🧰 Tecnologias
+
+- React Native, Expo SDK 58 e TypeScript.
+- Expo Router para navegação.
+- Expo Location, Task Manager e Notifications para localização e lembretes.
+- Expo SecureStore para armazenar o identificador do dispositivo.
+
+## 🚀 Executar
+
+Requer Node.js e npm. Na pasta do projeto, instale as dependências e inicie a versão web:
 
 ```powershell
-cd C:\Users\Matheus\Documents\oK\front
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-docker compose up --build -d
-Invoke-RestMethod -Uri 'http://localhost:8080/api/v1/health'
-```
-
-Se o `.env` da API já existe, o comando mantém seus valores. Confira as credenciais antes de iniciar. Depois de alterar código Java, execute novamente `docker compose up --build -d api` na pasta da API.
-
-Em outro terminal, entre neste repositório:
-
-```powershell
-cd C:\Users\Matheus\Documents\oK\front-app\mobile
 npm ci
-if (-not (Test-Path .env.local)) { Copy-Item .env.example .env.local }
-npx expo start
+npm run web
 ```
 
-Abra `http://localhost:8081` no Chrome para usar a versão web. O app usa `http://localhost:8080` como endereço padrão da API no navegador.
+Para abrir no Android, use `npm run android`. O comando inicia o Expo; é necessário ter um emulador
+aberto ou conectar um aparelho.
 
-Se quiser abrir as telas no Expo Go para uma revisão visual, pressione `s` no terminal do Expo para alternar para Expo Go. O monitoramento em segundo plano requer o APK de desenvolvimento.
+### Configurar a API
 
-Para o emulador Android, deixe a variável comentada; o padrão é `http://10.0.2.2:8080`. Para um celular na mesma rede, defina `EXPO_PUBLIC_API_URL` no `.env.local` com o IP do computador, por exemplo `http://192.168.100.39:8080`, e reinicie o Expo. O IP pode mudar. Confira o firewall do Windows se o celular não alcançar a API.
+A API está em um repositório separado e precisa estar acessível para carregar e salvar dados:
 
-O monitoramento da saída de casa em segundo plano usa geocerca nativa. Valide esse fluxo em uma **build de desenvolvimento** (`npx expo run:android` com Android Studio configurado, ou `npx eas-cli@latest build --platform android --profile development` após entrar na conta Expo e vincular o projeto). O perfil `mobile/eas.json` gera um APK. Inicie o Metro com `npx expo start --dev-client`. O Expo Go e o Chrome servem para revisar telas e operações da lista, mas não comprovam o funcionamento da geocerca em segundo plano. O Android solicita localização em primeiro e segundo plano e permissão de notificação; a lista continua funcionando caso essas permissões sejam negadas.
+- 💻 Código-fonte: [MobDev-Tech/smart-list-api](https://github.com/MobDev-Tech/smart-list-api)
+- 🌐 API publicada no Render: [smart-list-api.onrender.com](https://smart-list-api.onrender.com/)
+- 📚 Documentação Swagger: [swagger-ui.html](https://smart-list-api.onrender.com/swagger-ui.html)
 
-## Verificações
+Por padrão, o app usa `http://localhost:8080` na web e `http://10.0.2.2:8080` no emulador Android.
+Para usar a API publicada ou outra URL, crie `.env.local` a partir do exemplo:
 
 ```powershell
-npm run typecheck
-npm run lint
-npm run format:check
+Copy-Item .env.example .env.local
 ```
 
-O progresso e as pendências de validação estão em [FRONTEND-PLAN.md](FRONTEND-PLAN.md).
+Defina a URL base em `.env.local` (sem acrescentar `/api/v1`):
+
+```dotenv
+EXPO_PUBLIC_API_URL=https://smart-list-api.onrender.com
+```
+
+O cliente acrescenta o caminho da API e envia um identificador do dispositivo. Não coloque senhas
+ou tokens nessa variável.
+
+### 📲 APK Android
+
+O [APK de desenvolvimento no Expo EAS](https://expo.dev/accounts/devpedrogo/projects/smart-list/builds/9b4f2a33-f7f7-42dd-a53d-7d7fa7b984c8)
+está disponível para download na página do build.
+
+> Recursos nativos como geofence em segundo plano dependem de permissões e de uma build Android; a
+> versão web serve para visualizar e testar as telas, mas não substitui esse teste.
+
+## 🧱 Estrutura
+
+- `src/app/` — rotas do Expo Router.
+- `src/features/` — telas e lógica separadas por funcionalidade.
+- `src/components/` — componentes visuais compartilhados.
+- `src/lib/` — API, localização, notificações e armazenamento local.
+- `src/constants/` — tokens e constantes do app.
+
+## ✅ Verificações
+
+```powershell
+npm run lint
+npm run typecheck
+```
+
+## 🖼️ Imagens do aplicativo
+
+_As capturas de tela serão adicionadas aqui._
