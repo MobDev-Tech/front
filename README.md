@@ -1,43 +1,52 @@
-# Smart List — front-end
+# Smart List Mobile
 
-Aplicativo React Native com Expo Router. Este é o repositório `MobDev-Tech/front`. A API Spring Boot fica no repositório separado `MobDev-Tech/smart-list-api`.
+Aplicativo mobile da Smart List, construído com Expo, React Native, TypeScript e Expo Router.
 
-## Iniciar API e app
+## Executar
 
-Em um terminal, entre na pasta do repositório da API:
-
-```powershell
-cd C:\Users\Matheus\Documents\oK\front
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-docker compose up --build -d
-Invoke-RestMethod -Uri 'http://localhost:8080/api/v1/health'
-```
-
-Se o `.env` da API já existe, o comando mantém seus valores. Confira as credenciais antes de iniciar. Depois de alterar código Java, execute novamente `docker compose up --build -d api` na pasta da API.
-
-Em outro terminal, entre neste repositório:
+Consulte o [guia do repositório](../README.md) para iniciar a API e o aplicativo juntos.
 
 ```powershell
-cd C:\Users\Matheus\Documents\oK\front-app\mobile
 npm ci
-if (-not (Test-Path .env.local)) { Copy-Item .env.example .env.local }
 npx expo start
 ```
 
-Abra `http://localhost:8081` no Chrome para usar a versão web. O app usa `http://localhost:8080` como endereço padrão da API no navegador.
-
-Se quiser abrir as telas no Expo Go para uma revisão visual, pressione `s` no terminal do Expo para alternar para Expo Go. O monitoramento em segundo plano requer o APK de desenvolvimento.
-
-Para o emulador Android, deixe a variável comentada; o padrão é `http://10.0.2.2:8080`. Para um celular na mesma rede, defina `EXPO_PUBLIC_API_URL` no `.env.local` com o IP do computador, por exemplo `http://192.168.100.39:8080`, e reinicie o Expo. O IP pode mudar. Confira o firewall do Windows se o celular não alcançar a API.
-
-O monitoramento da saída de casa em segundo plano usa geocerca nativa. Valide esse fluxo em uma **build de desenvolvimento** (`npx expo run:android` com Android Studio configurado, ou `npx eas-cli@latest build --platform android --profile development` após entrar na conta Expo e vincular o projeto). O perfil `mobile/eas.json` gera um APK. Inicie o Metro com `npx expo start --dev-client`. O Expo Go e o Chrome servem para revisar telas e operações da lista, mas não comprovam o funcionamento da geocerca em segundo plano. O Android solicita localização em primeiro e segundo plano e permissão de notificação; a lista continua funcionando caso essas permissões sejam negadas.
-
-## Verificações
+Comandos úteis:
 
 ```powershell
-npm run typecheck
+npm run android
+npm run web
 npm run lint
-npm run format:check
+npm run typecheck
+npx expo-doctor
 ```
 
-O progresso e as pendências de validação estão em [FRONTEND-PLAN.md](FRONTEND-PLAN.md).
+## URL da API
+
+Copie `.env.example` para `.env.local`. Deixe a variável comentada no Chrome e no Android Emulator; só defina a URL para um aparelho físico:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Valores comuns:
+
+- Android Emulator: `http://10.0.2.2:8080`.
+- Dispositivo físico: `http://IP_DA_MAQUINA:8080`.
+- Web: `http://localhost:8080`.
+
+O cliente HTTP gera e persiste um `X-Device-ID` no dispositivo usando `expo-secure-store`.
+
+## Estrutura
+
+- `src/app/` — rotas e navegação do Expo Router.
+- `src/features/` — funcionalidades organizadas por domínio (`shopping-list`, `settings`,
+  `residence`, `item-editor`, `onboarding` e `notification-preview`). Cada fluxo separa a tela,
+  estado e ações quando aplicável, componentes auxiliares, ícones, constantes e estilos.
+- `src/components/` — componentes visuais reutilizáveis.
+- `src/constants/` — tokens de design.
+- `src/lib/` — cliente HTTP, integrações nativas e persistência local.
+
+A lista, as configurações e a residência usam a API. A geocerca e as notificações locais exigem
+permissões e uma build de desenvolvimento para validação em segundo plano no Android. O perfil
+`eas.json` produz um APK de desenvolvimento.
