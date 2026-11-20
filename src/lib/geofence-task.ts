@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import { GEOFENCE_TASK, processGeofenceExit } from './geofence-monitor';
 
 if (Platform.OS !== 'web') {
+  // Avalia o lembrete quando o sistema informa a saída do perímetro.
   TaskManager.defineTask<{
     eventType: Location.GeofencingEventType;
     region: Location.LocationRegion;
