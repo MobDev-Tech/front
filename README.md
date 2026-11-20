@@ -5,7 +5,7 @@ ajuda a organizar compras e lembrar dos itens pendentes. Com a localização aut
 notificação ao detectar a saída da residência configurada, ajudando pessoas a se lembrarem das
 compras antes de sair de casa e tornando a rotina mais prática.
 
-## 🖼️ Imagens do aplicativo
+## 📱 Imagens do aplicativo
 
 _As capturas de tela serão adicionadas aqui._
 
@@ -39,7 +39,8 @@ npm run web
 Para abrir no Android, use `npm run android`. O comando inicia o Expo; é necessário ter um emulador
 aberto ou conectar um aparelho.
 
-### Configurar a API
+### 🔌 Configurar a API
+---
 
 A API está em um repositório separado e precisa estar acessível para carregar e salvar dados:
 
@@ -64,6 +65,7 @@ O cliente acrescenta o caminho da API e envia um identificador do dispositivo. N
 ou tokens nessa variável.
 
 ### 📲 APK Android
+---
 
 Disponibilizar o APK foi uma das etapas mais desafiadoras da atividade extensionista. Além de
 desenvolver o aplicativo, foi necessário configurar e gerar uma build Android no Expo EAS,
