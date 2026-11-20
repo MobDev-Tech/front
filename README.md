@@ -7,7 +7,13 @@ compras antes de sair de casa e tornando a rotina mais prática.
 
 ## 📱 Imagens do aplicativo
 
-_As capturas de tela serão adicionadas aqui._
+| Lista de compras | Adicionar item | Configurações |
+|---|---|---|
+| <img src="assets/apk-prints/list.jpeg" alt="Tela da lista de compras" width="220"> | <img src="assets/apk-prints/add-item.jpeg" alt="Tela para adicionar item" width="220"> | <img src="assets/apk-prints/config.jpeg" alt="Tela de configurações" width="220"> |
+
+| Localização | Notificação | Pausar lembrete |
+|---|---|---|
+| <img src="assets/apk-prints/loc.jpeg" alt="Configuração da localização da residência" width="220"> | <img src="assets/apk-prints/notification.jpeg" alt="Notificação de lembrete" width="220"> | <img src="assets/apk-prints/snooze.jpeg" alt="Opção para pausar lembrete" width="220"> |
 
 ## ✨ Funcionalidades
 
