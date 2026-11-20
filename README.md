@@ -1,52 +1,83 @@
-# Smart List Mobile
+# 🛒 Smart List
 
-Aplicativo mobile da Smart List, construído com Expo, React Native, TypeScript e Expo Router.
+Aplicativo mobile para organizar compras e lembrar dos itens pendentes. Com a localização
+autorizada, o app também pode enviar um lembrete ao sair da residência configurada.
 
-## Executar
+## ✨ Funcionalidades
 
-Consulte o [guia do repositório](../README.md) para iniciar a API e o aplicativo juntos.
+- 📝 Adicionar e editar produtos, quantidades e categorias.
+- ✅ Marcar itens como comprados e organizar a lista por status.
+- 🏠 Configurar a residência usando a localização do aparelho.
+- 📍 Usar geofence para detectar a saída do perímetro residencial.
+- 🔔 Receber e pausar lembretes de compras.
+- ⚙️ Consultar preferências e permissões do aplicativo.
+
+## 🧰 Tecnologias
+
+- React Native, Expo SDK 58 e TypeScript.
+- Expo Router para navegação.
+- Expo Location, Task Manager e Notifications para localização e lembretes.
+- Expo SecureStore para armazenar o identificador do dispositivo.
+
+## 🚀 Executar
+
+Requer Node.js e npm. Na pasta do projeto, instale as dependências e inicie a versão web:
 
 ```powershell
 npm ci
-npx expo start
-```
-
-Comandos úteis:
-
-```powershell
-npm run android
 npm run web
-npm run lint
-npm run typecheck
-npx expo-doctor
 ```
 
-## URL da API
+Para abrir no Android, use `npm run android`. O comando inicia o Expo; é necessário ter um emulador
+aberto ou conectar um aparelho.
 
-Copie `.env.example` para `.env.local`. Deixe a variável comentada no Chrome e no Android Emulator; só defina a URL para um aparelho físico:
+### Configurar a API
+
+A API está em um repositório separado e precisa estar acessível para carregar e salvar dados:
+
+- 💻 Código-fonte: [MobDev-Tech/smart-list-api](https://github.com/MobDev-Tech/smart-list-api)
+- 🌐 API publicada no Render: [smart-list-api.onrender.com](https://smart-list-api.onrender.com/)
+- 📚 Documentação Swagger: [swagger-ui.html](https://smart-list-api.onrender.com/swagger-ui.html)
+
+Por padrão, o app usa `http://localhost:8080` na web e `http://10.0.2.2:8080` no emulador Android.
+Para usar a API publicada ou outra URL, crie `.env.local` a partir do exemplo:
 
 ```powershell
 Copy-Item .env.example .env.local
 ```
 
-Valores comuns:
+Defina a URL base em `.env.local` (sem acrescentar `/api/v1`):
 
-- Android Emulator: `http://10.0.2.2:8080`.
-- Dispositivo físico: `http://IP_DA_MAQUINA:8080`.
-- Web: `http://localhost:8080`.
+```dotenv
+EXPO_PUBLIC_API_URL=https://smart-list-api.onrender.com
+```
 
-O cliente HTTP gera e persiste um `X-Device-ID` no dispositivo usando `expo-secure-store`.
+O cliente acrescenta o caminho da API e envia um identificador do dispositivo. Não coloque senhas
+ou tokens nessa variável.
 
-## Estrutura
+### 📲 APK Android
 
-- `src/app/` — rotas e navegação do Expo Router.
-- `src/features/` — funcionalidades organizadas por domínio (`shopping-list`, `settings`,
-  `residence`, `item-editor`, `onboarding` e `notification-preview`). Cada fluxo separa a tela,
-  estado e ações quando aplicável, componentes auxiliares, ícones, constantes e estilos.
-- `src/components/` — componentes visuais reutilizáveis.
-- `src/constants/` — tokens de design.
-- `src/lib/` — cliente HTTP, integrações nativas e persistência local.
+O [APK de desenvolvimento no Expo EAS](https://expo.dev/accounts/devpedrogo/projects/smart-list/builds/9b4f2a33-f7f7-42dd-a53d-7d7fa7b984c8)
+está disponível para download na página do build.
 
-A lista, as configurações e a residência usam a API. A geocerca e as notificações locais exigem
-permissões e uma build de desenvolvimento para validação em segundo plano no Android. O perfil
-`eas.json` produz um APK de desenvolvimento.
+> Recursos nativos como geofence em segundo plano dependem de permissões e de uma build Android; a
+> versão web serve para visualizar e testar as telas, mas não substitui esse teste.
+
+## 🧱 Estrutura
+
+- `src/app/` — rotas do Expo Router.
+- `src/features/` — telas e lógica separadas por funcionalidade.
+- `src/components/` — componentes visuais compartilhados.
+- `src/lib/` — API, localização, notificações e armazenamento local.
+- `src/constants/` — tokens e constantes do app.
+
+## ✅ Verificações
+
+```powershell
+npm run lint
+npm run typecheck
+```
+
+## 🖼️ Imagens do aplicativo
+
+_As capturas de tela serão adicionadas aqui._
