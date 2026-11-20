@@ -23,6 +23,7 @@ if (Platform.OS !== 'web') {
   });
 }
 
+/** Configura os canais e as ações das notificações locais. */
 export async function configureNotifications() {
   if (Platform.OS === 'web') return;
   if (Platform.OS === 'android') {
@@ -51,6 +52,7 @@ export async function configureNotifications() {
   ]);
 }
 
+/** Exibe um lembrete permitido, respeitando a plataforma e o intervalo entre avisos. */
 export async function maybeShowReminder(
   decision: TriggerDecision,
   vibrate: boolean,
@@ -80,6 +82,7 @@ export async function maybeShowReminder(
   return true;
 }
 
+/** Trata ações da notificação, como abrir a lista ou adiar o lembrete. */
 export async function handleNotificationResponse(response: Notifications.NotificationResponse) {
   const action = response.actionIdentifier;
   if (action === 'snooze') await applySnooze('MINUTES_30');
