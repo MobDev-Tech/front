@@ -65,8 +65,11 @@ ou tokens nessa variável.
 
 ### 📲 APK Android
 
-O [APK de desenvolvimento no Expo EAS](https://expo.dev/accounts/devpedrogo/projects/smart-list/builds/9b4f2a33-f7f7-42dd-a53d-7d7fa7b984c8)
-está disponível para download na página do build.
+Disponibilizar o APK foi uma das etapas mais desafiadoras da atividade extensionista. Além de
+desenvolver o aplicativo, foi necessário configurar e gerar uma build Android no Expo EAS,
+considerando recursos nativos como localização, geofence e notificações.
+
+➡️ [Clique aqui para baixar o APK para Android](https://expo.dev/accounts/devpedrogo/projects/smart-list/builds/9b4f2a33-f7f7-42dd-a53d-7d7fa7b984c8)
 
 > Recursos nativos como geofence em segundo plano dependem de permissões e de uma build Android; a
 > versão web serve para visualizar e testar as telas, mas não substitui esse teste.
