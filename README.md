@@ -1,7 +1,13 @@
 # 🛒 Smart List
 
-Aplicativo mobile para organizar compras e lembrar dos itens pendentes. Com a localização
-autorizada, o app também pode enviar um lembrete ao sair da residência configurada.
+Desenvolvido como parte de uma atividade extensionista de Desenvolvimento Mobile, o Smart List
+ajuda a organizar compras e lembrar dos itens pendentes. Com a localização autorizada, envia uma
+notificação ao detectar a saída da residência configurada, ajudando pessoas a se lembrarem das
+compras antes de sair de casa e tornando a rotina mais prática.
+
+## 🖼️ Imagens do aplicativo
+
+_As capturas de tela serão adicionadas aqui._
 
 ## ✨ Funcionalidades
 
@@ -14,10 +20,12 @@ autorizada, o app também pode enviar um lembrete ao sair da residência configu
 
 ## 🧰 Tecnologias
 
-- React Native, Expo SDK 58 e TypeScript.
-- Expo Router para navegação.
-- Expo Location, Task Manager e Notifications para localização e lembretes.
-- Expo SecureStore para armazenar o identificador do dispositivo.
+- **Aplicativo:** React Native, Expo SDK 58 e TypeScript.
+- **Navegação:** Expo Router.
+- **Recursos nativos:** Expo Location, Task Manager, Notifications e SecureStore.
+- **Backend:** API REST feita com [Spring Boot](https://spring.io/projects/spring-boot), no repositório separado [MobDev-Tech/smart-list-api](https://github.com/MobDev-Tech/smart-list-api).
+- **Banco de dados:** [Supabase](https://supabase.com).
+- **Deploy da API:** [Render](https://smart-list-api.onrender.com).
 
 ## 🚀 Executar
 
@@ -71,13 +79,4 @@ está disponível para download na página do build.
 - `src/lib/` — API, localização, notificações e armazenamento local.
 - `src/constants/` — tokens e constantes do app.
 
-## ✅ Verificações
 
-```powershell
-npm run lint
-npm run typecheck
-```
-
-## 🖼️ Imagens do aplicativo
-
-_As capturas de tela serão adicionadas aqui._
